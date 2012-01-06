@@ -8,6 +8,9 @@ from django.utils.http import urlquote
 from django.shortcuts import get_object_or_404
 from django.contrib.markup.templatetags.markup import markdown
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.markup.templatetags.markup import markdown
+
+from tagging.models import Tag
 
 from gallery.models import Album, Image
 
@@ -90,9 +93,9 @@ class GalleryFeed(Feed):
                 'thumbnail_height': obj.thumbnail_image.height,
                }
 
-        if len(obj.tags) > 0:
-           keywords = [ t.name for t in obj.tags ]
-           item['keywords'] = keywords
+#        if len(obj.tags) > 0:
+#           keywords = [tag.name for tag in Tag.objects.get_for_object(obj)]
+#           item['keywords'] = keywords
 
         return item
 
@@ -101,6 +104,12 @@ class GalleryFeed(Feed):
 
     def item_description(self, item):
         return markdown(item.text)
+
+    def item_categories(self, item):
+      return [tag.name for tag in Tag.objects.get_for_object(item)]
+
+    def item_guid(self, item):
+      return "gallery_item_%d" % item.id
 
 class AlbumFeed(Feed):
     feed_type = MediaRSSFeed
@@ -122,6 +131,12 @@ class AlbumFeed(Feed):
         q = album.get_descendants(include_self=True).filter(is_public=True).values("id")
         return Image.objects.filter(album__in=q, is_public=True).order_by("-date_added")
 
+    def item_title(self, item):
+      return item.title
+
+    def item_description(self, item):
+      return markdown(item.text)
+
     def item_pubdate(self, obj):
         return obj.date_added
 
@@ -138,9 +153,14 @@ class AlbumFeed(Feed):
                 'thumbnail_height': obj.thumbnail_image.height,
                }
 
-        if len(obj.tags) > 0:
-           keywords = [ t.name for t in obj.tags ]
-           item['keywords'] = keywords
+#        if len(obj.tags) > 0:
+#           keywords = [tag.name for tag in Tag.objects.get_for_object(obj)]
+#           item['keywords'] = keywords
 
         return item
 
+    def item_categories(self, item):
+      return [tag.name for tag in Tag.objects.get_for_object(item)]
+
+    def item_guid(self, item):
+      return "gallery_item_%d" % item.id
