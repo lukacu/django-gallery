@@ -1,0 +1,13 @@
+{% extends "gallery/base.html" %}
+{% block title %}Gallery{% endblock %}
+{% block content %}
+<div class="gallery root">
+{% for album in albums %}
+<a href="{% url gallery path=album.slug %}">
+<div class="album preview">
+<div class="title">{{album.title}}</div>
+</div>
+</a>
+{% endfor %}
+</div>
+{% endblock %}

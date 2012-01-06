@@ -1,0 +1,28 @@
+{% extends "gallery/base.html" %}
+{% load markup %}
+{% block title %}{{album.title}}{% endblock %}
+{% block content %}
+<div class="gallery album static">
+<div class="description">
+{{ album.text|markdown }}
+</div>
+<div class="subalbums">
+{% if subalbums %}<h2>Albums</h2>{% endif %}
+{% for subalbum in subalbums %}
+<a href="{% url gallery path=subalbum.slug %}">
+<div class="album preview">
+<div class="title">{{subalbum.title}}</div>
+</div>
+</a>
+{% endfor %}
+</div>
+<div class="images">
+{% if images %}<h2>Images</h2>{% endif %}
+{% for image in images %}
+<div class="image">
+<a href="{% url gallery path=image.slug %}"><img src="{{ image.thumbnail_image.url }}" alt="{{image.title}}" title="{{image.title}}" /></a>
+</div>
+{% endfor %}
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "gallery/base.html" %}
+{% load markup %}
+{% load tagging_tags %}
+{% block title %}{{image.title}}{% endblock %}
+{% block content %}
+<div class="gallery image">
+<h1>{{image.title}}</h1>
+<div class="image full">
+<img src="{{ image.display_image.url }}" alt="{{image.title}}" title="{{image.title}}" />
+</div>
+<div class="text">{{ image.text|markdown }}</div>
+{% with image as element %}
+<div class="resources">
+{% tags_for_object image as tags %}
+{% include "gallery/tags.html" %}
+</div>
+{% endwith %}
+</div>
+{% endblock %}

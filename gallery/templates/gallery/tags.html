@@ -1,0 +1,8 @@
+<div class="tags">
+{% if tags %}
+<h2>Tags</h2>
+{% for tag in tags %}
+<a class="tag" href="/tags/{{ tag.id }}">{{ tag.name }}</a>
+{% endfor %}
+{% endif %}
+</div>
