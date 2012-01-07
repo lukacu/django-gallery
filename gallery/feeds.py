@@ -79,8 +79,6 @@ class GalleryFeed(Feed):
         return obj.date_added
 
     def item_extra_kwargs(self, obj):
-        print obj.title
-
         root = "http://" + Site.objects.get_current().domain
 
         item = {'media:title': obj.title,
