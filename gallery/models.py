@@ -32,7 +32,7 @@ class Album(MPTTModel):
     tags = TagField(help_text=_('Separate tags with spaces, put quotes around multiple-word tags.'), verbose_name=_('tags'))
 
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
-    cover = models.ForeignKey('Image', related_name='cover', null=True, on_delete=models.SET_NULL)
+    cover = models.ForeignKey('Image', related_name='cover', null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:
       unique_together = (("title_slug", "parent"),)
