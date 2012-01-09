@@ -23,6 +23,21 @@ from tagging.fields import TagField
 
 from gallery import EXIF
 
+ORDER_CHOICES = (
+    ("-a", 'Descending by addition date'),
+    ("+a", 'Ascending by addition date'),
+    ("-t", 'Descending by date taken'),
+    ("+t", 'Ascending by date taken'),
+    ("-m", 'Descending by modification date'),
+    ("+m", 'Ascending by modification date'),
+  )
+
+ORDER_MAPPING = {
+ "a" : "date_added",
+ "t" : "date_taken",
+ "m" : "date_modified",
+}
+
 class Album(MPTTModel):
     title = models.CharField(_('title'), max_length=255)
     title_slug = models.SlugField(_('title slug'), editable = False, max_length=255)
@@ -30,7 +45,7 @@ class Album(MPTTModel):
     text = models.TextField(_('text'), blank=True)
     is_public = models.BooleanField(_('is public'), default=True, help_text=_('Public albums will be displayed in the default views.'))
     tags = TagField(help_text=_('Separate tags with spaces, put quotes around multiple-word tags.'), verbose_name=_('tags'))
-
+    order = models.CharField(max_length=2, blank=False, default="", choices=ORDER_CHOICES, help_text=_('The default order of images for this album.'))
     parent = models.ForeignKey('self', null=True, blank=True, related_name='children')
     cover = models.ForeignKey('Image', related_name='cover', null=True, blank=True, on_delete=models.SET_NULL)
 
@@ -67,7 +82,8 @@ class Album(MPTTModel):
         try:
           if not hasattr(self, '_cover'):
             q = self.get_descendants(include_self=True).filter(is_public=True).values("id")
-            self._cover = Image.objects.filter(album__in=q, is_public=True).order_by("-date_added")[0]
+            order = "%s%s" % ('' if self.get_sorting_order() else '-', self.get_sorting_field())
+            self._cover = Image.objects.filter(album__in=q, is_public=True).order_by(order)[0]
           return self._cover
         except IndexError:
           return None
@@ -77,13 +93,23 @@ class Album(MPTTModel):
     def get_absolute_url(self):
       return reverse('gallery', kwargs={"path" : self.slug()})
 
+    def get_sorting_field(self):
+      if len(self.order) < 2:
+        return "date_added"
+      return ORDER_MAPPING.get(self.order[1], "date_added")
+
+    def get_sorting_order(self):
+      if len(self.order) < 2:
+        return False
+      return self.order[0] == "+"
+
 class Image(ImageModel):
     title = models.CharField(max_length=255)
     title_slug = models.SlugField(_('slug'), editable = False, max_length=255)
     date_added = models.DateTimeField(_('date added'), default=datetime.now, editable = False, auto_now_add = True)
     date_taken = models.DateTimeField(_('date taken'), null=True, blank=True, editable=False)
     date_modified = models.DateTimeField(_('date modified'), editable = False, auto_now = True, default=datetime.now)
-    original_image = models.ImageField(upload_to='gallery')
+    original_image = models.ImageField(upload_to=getattr(settings, 'GALLERY_DIRECTORY', 'gallery'))
     num_views = models.PositiveIntegerField(editable=False, default=0)
 
     text = models.TextField(_('text'), blank=True)

@@ -49,7 +49,8 @@ def resolve(request, path):
     #  breadcrumbs.extend([{'title' : o.title, 'url' : reverse(resolve, kwargs={"path" : o.slug()})} for o in current_album.get_ancestors() ])
 
   if len(tokens) == 0:
-    images = Image.objects.filter(album=current_album, is_public = True)
+    order = "%s%s" % ('' if current_album.get_sorting_order() else '-', current_album.get_sorting_field())
+    images = Image.objects.filter(album=current_album, is_public = True).order_by(order)
 
     return render_to_response('gallery/album.html',
       {"album" : current_album, "subalbums" : albums ,"images" : images},
@@ -61,14 +62,19 @@ def resolve(request, path):
       image = Image.objects.get(is_public = True, album=current_album, title_slug=tokens[0])
       if hasattr(request, 'breadcrumbs'):
         request.breadcrumbs(image.title, reverse(resolve, kwargs={"path" : image.slug()}))
-        
+      order_field = current_album.get_sorting_field()
+      order = current_album.get_sorting_order()
+      previous_cpr = "%s__%s" % (order_field, 'gt' if order else 'lt')
+      next_cpr = "%s__%s" % (order_field, 'lt' if order else 'gt')
+      previous_order = "%s%s" % ('' if order else '-', order_field)
+      next_order = "%s%s" % ('-' if order else '', order_field)
       try:
-        previous = Image.objects.filter(is_public = True, album=current_album, date_added__lt=image.date_added).order_by("-date_added")[0]
+        previous = Image.objects.filter(is_public = True, album=current_album).filter(**{previous_cpr : getattr(image, order_field) }).order_by(previous_order)[0]
       except IndexError:
         previous = None
 
       try:
-        next = Image.objects.filter(is_public = True, album=current_album, date_added__gt=image.date_added).order_by("date_added")[0]
+        next = Image.objects.filter(is_public = True, album=current_album).filter(**{next_cpr : getattr(image, order_field) }).order_by(next_order)[0]
       except IndexError:
         next = None
 

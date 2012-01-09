@@ -2,7 +2,7 @@
 # -*- Mode: python; indent-tabs-mode: nil; c-basic-offset: 2; tab-width: 2 -*-
 
 from imagekit.specs import ImageSpec 
-from imagekit import processors 
+from imagekit.processors import *
 from gallery.watermark import Watermark
 from django.conf import settings
 
@@ -26,13 +26,13 @@ class EnchanceThumb(processors.Adjustment):
 class Thumbnail(ImageSpec): 
     access_as = 'thumbnail_image' 
     pre_cache = True 
-    processors = [ResizeThumb, EnchanceThumb] 
+    processors = [Transpose, ResizeThumb, EnchanceThumb] 
     quality = 75
 
 # and our display spec
 class Display(ImageSpec):
     access_as = 'display_image' 
     increment_count = True
-    processors = [ResizeDisplay]
+    processors = [Transpose, ResizeDisplay]
     quality = 95
 
