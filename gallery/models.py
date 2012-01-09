@@ -15,13 +15,18 @@ from django.utils.encoding import smart_str, force_unicode
 from django.utils.functional import curry
 from django.utils.translation import ugettext_lazy as _
 
-from imagekit.models import ImageModel
+from imagekit.models import ImageSpec
+from imagekit.processors import *
+from imagekit.processors.crop import *
+from imagekit.processors.resize import *
 
 from mptt.models import MPTTModel
-
 from tagging.fields import TagField
-
 from gallery import EXIF
+
+DISPLAY_IMAGE_PROCESSORS = [Transpose(Transpose.AUTO), Fit(width=600, height=600)]
+THUMBNAIL_IMAGE_PROCESSORS = [Transpose(Transpose.AUTO), Crop(width=128, height=128, anchor=Crop.CENTER)]
+COVER_IMAGE_PROCESSORS = [Transpose(Transpose.AUTO), Crop(width=128, height=128, anchor=Crop.CENTER)]
 
 ORDER_CHOICES = (
     ("-a", 'Descending by addition date'),
@@ -41,7 +46,7 @@ ORDER_MAPPING = {
 class Album(MPTTModel):
     title = models.CharField(_('title'), max_length=255)
     title_slug = models.SlugField(_('title slug'), editable = False, max_length=255)
-    weight = models.IntegerField(_('weight'), default=0, blank=True)
+    weight = models.IntegerField(_('weight'), default=0, blank=True, editable=False)
     text = models.TextField(_('text'), blank=True)
     is_public = models.BooleanField(_('is public'), default=True, help_text=_('Public albums will be displayed in the default views.'))
     tags = TagField(help_text=_('Separate tags with spaces, put quotes around multiple-word tags.'), verbose_name=_('tags'))
@@ -103,30 +108,22 @@ class Album(MPTTModel):
         return False
       return self.order[0] == "+"
 
-class Image(ImageModel):
+class Image(models.Model):
     title = models.CharField(max_length=255)
     title_slug = models.SlugField(_('slug'), editable = False, max_length=255)
     date_added = models.DateTimeField(_('date added'), default=datetime.now, editable = False, auto_now_add = True)
     date_taken = models.DateTimeField(_('date taken'), null=True, blank=True, editable=False)
     date_modified = models.DateTimeField(_('date modified'), editable = False, auto_now = True, default=datetime.now)
     original_image = models.ImageField(upload_to=getattr(settings, 'GALLERY_DIRECTORY', 'gallery'))
+    display_image = ImageSpec(getattr(settings, 'GALLERY_DISPLAY_IMAGE_PROCESSORS', DISPLAY_IMAGE_PROCESSORS), image_field='original_image', options={'quality': 90}, pre_cache=True)
+    thumbnail_image = ImageSpec(getattr(settings, 'GALLERY_THUMBNAIL_IMAGE_PROCESSORS', THUMBNAIL_IMAGE_PROCESSORS), image_field='original_image', format='JPEG', options={'quality': 75}, pre_cache=True)
+    cover_image = ImageSpec(getattr(settings, 'GALLERY_COVER_IMAGE_PROCESSORS', COVER_IMAGE_PROCESSORS), image_field='original_image', format='JPEG', options={'quality': 75}, autoconvert=False)
     num_views = models.PositiveIntegerField(editable=False, default=0)
-
     text = models.TextField(_('text'), blank=True)
     is_public = models.BooleanField(_('is public'), default=True, help_text=_('Public images will be displayed in the default views.'))
     tags = TagField(help_text=_('Separate tags with spaces, put quotes around multiple-word tags.'), verbose_name=_('tags'))
-
     enable_comments = models.BooleanField(_('can comment'), default=True)
-
     album = models.ForeignKey(Album)
-
-
-    class IKOptions:
-        # This inner class is where we define the ImageKit options for the model
-        spec_module = getattr(settings, 'GALLERY_SPECS', 'gallery.specs')
-        cache_dir = 'cache'
-        image_field = 'original_image'
-        save_count_as = 'num_views'
 
     class Meta:
         ordering = ['-date_added']

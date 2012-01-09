@@ -1,26 +1,22 @@
 # -*- Mode: python; indent-tabs-mode: nil; c-basic-offset: 2; tab-width: 2 -*-
 
-from imagekit.processors import ImageProcessor
 from imagekit.lib import *
 
-class Watermark(ImageProcessor):
-    image_path = None
-    style = 'poss'
-    opacity = 1
-    offset = '15x15'
-    looks_best = '300x300'
-    
-    @classmethod
-    def process(cls, image, fmt, obj=None):
-        try:
-            mark = Image.open(cls.image_path)
-        except IOError, e:
-            print e
-#            raise IOError('Unable to open watermark source image %s: %s' % \
-#                          (cls.image_path, e))
-            return image, fmt
-        return apply_watermark(image, mark, cls.style, cls.opacity, cls.offset, cls.looks_best), fmt
+class Watermark(object):
 
+  def __init__(self, image_path, style="poss", offset="15,1", looks_best = '300x300', opacity = 1):
+    self.image_path = image_path
+    self.style = style
+    self.opacity = opacity
+    self.offset = offset
+    self.looks_best = looks_best
+    
+  def process(self, image):
+    try:
+      mark = Image.open(self.image_path)
+      return apply_watermark(image, mark, self.style, self.opacity, self.offset, self.looks_best)
+    except IOError, e:
+      return image
 
 def reduce_opacity(im, opacity):
     """Returns an image with reduced opacity."""
@@ -52,25 +48,19 @@ def apply_watermark(im, mark, style, opacity, offset, looks_best):
                 layer.paste(mark, (x, y))
     elif style == 'scale':
         # scale, but preserve the aspect ratio
-        ratio = min(
-            float(im.size[0]) / mark.size[0], float(im.size[1]) / mark.size[1])
+        ratio = min(float(im.size[0]) / mark.size[0], float(im.size[1]) / mark.size[1])
         w = int(mark.size[0] * ratio)
         h = int(mark.size[1] * ratio)
         mark = mark.resize((w, h))
         layer.paste(mark, ((im.size[0] - w) / 2, (im.size[1] - h) / 2))
     elif style == 'poss':
         lbw,lbh = looks_best.split('x')
-        offw,offh = offset.split('x')
-
+        offw,offh = offset.split(',')
         mark_width = mark.size[0] 
         mark_height = mark.size[1] 
-
-     
         mark = mark.resize((mark_width, mark_height), Image.ANTIALIAS)
-        
         mark_poss_w = im.size[0] - mark.size[0] - int(offw)
         mark_poss_h = im.size[1] - mark.size[1] - int(offh)
-        
         layer.paste(mark,(mark_poss_w,mark_poss_h))
     else:
         layer.paste(mark, style)
