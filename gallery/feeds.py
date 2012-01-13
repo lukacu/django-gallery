@@ -127,7 +127,7 @@ class AlbumFeed(Feed):
 
     def items(self, album):
         q = album.get_descendants(include_self=True).filter(is_public=True).values("id")
-        return Image.objects.filter(album__in=q, is_public=True).order_by("-date_added")
+        return Image.objects.filter(album__in=q, is_public=True).order_by("-date_added")[0:20]
 
     def item_title(self, item):
       return item.title
