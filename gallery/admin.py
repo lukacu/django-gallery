@@ -4,6 +4,7 @@
 from django.contrib import admin
 from mptt.admin import MPTTModelAdmin
 from gallery.models import Album, Image
+from imagekit.admin import AdminThumbnail
 
 from mptt.forms import TreeNodeChoiceField
 
@@ -13,16 +14,12 @@ class AlbumAdmin(MPTTModelAdmin):
     mptt_level_indent = 40
 
 class ImageAdmin(admin.ModelAdmin):
-    list_display = ('title', 'date_added', 'is_public', 'tags') #, 'admin_thumbnail')
-    list_filter = ['date_added', 'album']
+    list_display = ('admin_thumbnail', 'title', 'album', 'date_added', 'is_public')
+    list_display_links = ['title']
+    list_filter = ['date_added', 'album', 'is_public']
     search_fields = ['title', 'title_slug', 'text']
     list_per_page = 20
-#    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-#        print kwargs
-#        if db_field.name == "gallery":
-#            kwargs["widget"] = TreeNodeChoiceField
-#        return super(admin.ModelAdmin, self).formfield_for_foreignkey(db_field, request, **kwargs)
-
+    admin_thumbnail = AdminThumbnail(image_field='thumbnail_image', template="gallery/admin/thumbnail.html")
 
 admin.site.register(Album, AlbumAdmin)
 admin.site.register(Image, ImageAdmin)
