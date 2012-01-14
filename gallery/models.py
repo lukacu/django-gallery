@@ -118,7 +118,6 @@ class Image(models.Model):
     display_image = ImageSpec(getattr(settings, 'GALLERY_DISPLAY_IMAGE_PROCESSORS', DISPLAY_IMAGE_PROCESSORS), image_field='original_image', options={'quality': 90}, pre_cache=True)
     thumbnail_image = ImageSpec(getattr(settings, 'GALLERY_THUMBNAIL_IMAGE_PROCESSORS', THUMBNAIL_IMAGE_PROCESSORS), image_field='original_image', format='JPEG', options={'quality': 75}, pre_cache=True)
     cover_image = ImageSpec(getattr(settings, 'GALLERY_COVER_IMAGE_PROCESSORS', COVER_IMAGE_PROCESSORS), image_field='original_image', format='JPEG', options={'quality': 75}, autoconvert=False)
-    num_views = models.PositiveIntegerField(editable=False, default=0)
     text = models.TextField(_('text'), blank=True)
     is_public = models.BooleanField(_('is public'), default=True, help_text=_('Public images will be displayed in the default views.'))
     tags = TagField(help_text=_('Separate tags with spaces, put quotes around multiple-word tags.'), verbose_name=_('tags'))

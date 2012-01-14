@@ -8,12 +8,12 @@ from gallery.models import Album, Image
 from mptt.forms import TreeNodeChoiceField
 
 class AlbumAdmin(MPTTModelAdmin):
-    list_display = ('title', 'is_public') #'photo_count')
+    list_display = ('title', 'is_public')
     list_filter = ['is_public']
     mptt_level_indent = 40
 
 class ImageAdmin(admin.ModelAdmin):
-    list_display = ('title', 'date_added', 'is_public', 'tags', 'num_views') #, 'admin_thumbnail')
+    list_display = ('title', 'date_added', 'is_public', 'tags') #, 'admin_thumbnail')
     list_filter = ['date_added', 'album']
     search_fields = ['title', 'title_slug', 'text']
     list_per_page = 20
