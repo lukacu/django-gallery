@@ -20,6 +20,7 @@ from imagekit.processors import *
 from imagekit.processors.crop import *
 from imagekit.processors.resize import *
 
+from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 from tagging.fields import TagField
 from gallery import EXIF
@@ -122,7 +123,7 @@ class Image(models.Model):
     is_public = models.BooleanField(_('is public'), default=True, help_text=_('Public images will be displayed in the default views.'))
     tags = TagField(help_text=_('Separate tags with spaces, put quotes around multiple-word tags.'), verbose_name=_('tags'))
     enable_comments = models.BooleanField(_('can comment'), default=True)
-    album = models.ForeignKey(Album)
+    album = TreeForeignKey(Album)
 
     class Meta:
         ordering = ['-date_added']

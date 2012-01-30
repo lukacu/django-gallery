@@ -23,7 +23,7 @@ def resolve(request, path):
   if tokens == None or len(tokens) == 0:
     recent = Image.objects.filter(is_public = True).order_by("-date_added")[0:getattr(settings, 'GALLERY_RECENT', 5)]
     return render_to_response('gallery/gallery.html',
-      {"albums" : Album.tree.root_nodes().filter(is_public = True).order_by("weight", "title"), "recent" : recent},
+      {"albums" : Album.tree.root_nodes().filter(is_public = True), "recent" : recent},
       context_instance = RequestContext(request)
     )
 
@@ -40,7 +40,7 @@ def resolve(request, path):
     current_album = albums[0]
     parent = current_album.id
 
-    albums = current_album.children.filter(is_public=True).order_by("weight", "title")
+    albums = current_album.children.filter(is_public=True)
     if hasattr(request, 'breadcrumbs'):
       request.breadcrumbs(current_album.title, reverse(resolve, kwargs={"path" : current_album.slug()})) 
 
@@ -62,6 +62,8 @@ def resolve(request, path):
       image = Image.objects.get(is_public = True, album=current_album, title_slug=tokens[0])
       if hasattr(request, 'breadcrumbs'):
         request.breadcrumbs(image.title, reverse(resolve, kwargs={"path" : image.slug()}))
+
+      # This part gets a bit long because we have to determine field names and directions of sorting
       order_field = current_album.get_sorting_field()
       order = current_album.get_sorting_order()
       previous_cpr = "%s__%s" % (order_field, 'gt' if order else 'lt')
