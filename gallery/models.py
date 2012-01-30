@@ -47,7 +47,6 @@ ORDER_MAPPING = {
 class Album(MPTTModel):
     title = models.CharField(_('title'), max_length=255)
     title_slug = models.SlugField(_('title slug'), editable = False, max_length=255)
-    weight = models.IntegerField(_('weight'), default=0, blank=True, editable=False)
     text = models.TextField(_('text'), blank=True)
     is_public = models.BooleanField(_('is public'), default=True, help_text=_('Public albums will be displayed in the default views.'))
     tags = TagField(help_text=_('Separate tags with spaces, put quotes around multiple-word tags.'), verbose_name=_('tags'))
