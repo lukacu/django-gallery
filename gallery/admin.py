@@ -7,16 +7,29 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.contrib import admin
+from django.forms import ModelForm
 from mptt.admin import MPTTModelAdmin
 from gallery.models import Album, Image
 from imagekit.admin import AdminThumbnail
 
 from mptt.forms import TreeNodeChoiceField
 
+class AlbumAdminForm(ModelForm):
+
+    class Meta:
+        model = Album
+
+    def __init__(self, *args, **kwargs):
+        super(AlbumAdminForm, self).__init__(*args, **kwargs)
+        q = self.instance.get_descendants(include_self=True).filter(is_public=True).values("id")
+        self.fields['cover'].queryset = Image.objects.filter(album__in=q, is_public=True).order_by("-date_added")
+
+
 class AlbumAdmin(MPTTModelAdmin):
-    list_display = ('title', 'is_public', 'order', 'move_up_down_links')
+    list_display = ('title', 'album_cover', 'is_public', 'order', 'move_up_down_links')
     list_filter = ['is_public']
     mptt_level_indent = 40
+    form = AlbumAdminForm
 
     def get_urls(self):
       from django.conf.urls.defaults import patterns, url
@@ -53,6 +66,14 @@ class AlbumAdmin(MPTTModelAdmin):
     move_up_down_links.allow_tags = True
     move_up_down_links.short_description = 'Move'
 
+    def album_cover(self, obj):
+      cover = obj.cover_image()
+      if not cover:
+        return "<em>Not defined</em>"
+      return '<img src="%s" alt="%s" style="width: 42px;" />' % (cover.cover_image.url, cover.title)
+
+    album_cover.allow_tags = True
+    album_cover.short_description = 'Cover'
 
 class ImageAdmin(admin.ModelAdmin):
     list_display = ('admin_thumbnail', 'title', 'album', 'date_added', 'is_public')

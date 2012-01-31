@@ -23,6 +23,7 @@ from imagekit.processors.resize import *
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
 from tagging.fields import TagField
+
 from gallery import EXIF
 
 DISPLAY_IMAGE_PROCESSORS = [Transpose(Transpose.AUTO), Fit(width=600, height=600)]
