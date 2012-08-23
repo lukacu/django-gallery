@@ -123,7 +123,7 @@ def json_get_image(request):
     except MultiValueDictKeyError:
       image = None
 
-  if image != None:
+  if image is not None:
     return HttpResponse(serializers.serialize('json', image), mimetype='text/plain')
   else:
     return HttpResponse("", mimetype='text/plain')

@@ -2,23 +2,18 @@
 # -*- Mode: python; indent-tabs-mode: nil; c-basic-offset: 2; tab-width: 2 -*-
 
 from datetime import datetime
-from inspect import isclass
 
 import django
 from django.db import models
-from django.db.models.signals import post_init
 from django.conf import settings
-from django.core.files.base import ContentFile
 from django.core.urlresolvers import reverse
 from django.template.defaultfilters import slugify
-from django.utils.encoding import smart_str, force_unicode
-from django.utils.functional import curry
 from django.utils.translation import ugettext_lazy as _
+from gallery.fields import ThumbnailParametersField
+from gallery.watermark import Watermark
 
-from imagekit.models import ImageSpec
+from imagekit.models.fields import ImageSpecField
 from imagekit.processors import *
-from imagekit.processors.crop import *
-from imagekit.processors.resize import *
 
 from mptt.fields import TreeForeignKey
 from mptt.models import MPTTModel
@@ -26,9 +21,9 @@ from tagging.fields import TagField
 
 from gallery import EXIF
 
-DISPLAY_IMAGE_PROCESSORS = [Transpose(Transpose.AUTO), Fit(width=600, height=600)]
-THUMBNAIL_IMAGE_PROCESSORS = [Transpose(Transpose.AUTO), Crop(width=128, height=128, anchor=Crop.CENTER)]
-COVER_IMAGE_PROCESSORS = [Transpose(Transpose.AUTO), Crop(width=128, height=128, anchor=Crop.CENTER)]
+DISPLAY_IMAGE_PROCESSORS = [Transpose(Transpose.AUTO), ResizeToFill(width=600, height=600)]
+THUMBNAIL_IMAGE_PROCESSORS = [Transpose(Transpose.AUTO), Crop(width=128, height=128, anchor=Anchor.CENTER)]
+COVER_IMAGE_PROCESSORS = [Transpose(Transpose.AUTO), Crop(width=128, height=128, anchor=Anchor.CENTER)]
 
 ORDER_CHOICES = (
     ("-a", 'Descending by addition date'),
@@ -44,6 +39,30 @@ ORDER_MAPPING = {
  "t" : "date_taken",
  "m" : "date_modified",
 }
+
+def _get_image_processor(instance, file):
+    width = getattr(settings, "GALLERY_IMAGE_WIDTH", 600)
+    height = getattr(settings, "GALLERY_IMAGE_HEIGHT", 600)
+    processor = [Transpose(Transpose.AUTO), ResizeToFill(width=width, height=height)]
+    watermark = getattr(settings, "GALLERY_WATERMARK", None)
+
+    if watermark:
+        if type(watermark) == dict:
+            processor.append(Watermark(image_path = watermark["image"],
+                opacity = watermark.get("opacity", 1),
+                offset = '%d,%d' % (watermark.get("offsetX", 0), watermark.get("offsetY", 0))))
+
+    return processor
+
+def _get_thumbnail_processor(instance, file):
+    width = getattr(settings, "GALLERY_THUMBNAIL_WIDTH", 100)
+    height = getattr(settings, "GALLERY_THUMBNAIL_HEIGHT", 100)
+    parameters = instance.thumbnail_parameters
+
+    if len(parameters) < 3:
+        return [Transpose(Transpose.AUTO), ResizeToFill(width=width, height=height, anchor=Anchor.CENTER)]
+    else:
+        return [Transpose(Transpose.AUTO), ResizeCanvas(width=width, height=height, anchor=(parameters.get("x", 0.5), parameters.get("y", 0.5)))]
 
 class Album(MPTTModel):
     title = models.CharField(_('title'), max_length=255)
@@ -115,10 +134,10 @@ class Image(models.Model):
     date_added = models.DateTimeField(_('date added'), default=datetime.now, editable = False, auto_now_add = True)
     date_taken = models.DateTimeField(_('date taken'), null=True, blank=True, editable=False)
     date_modified = models.DateTimeField(_('date modified'), editable = False, auto_now = True, default=datetime.now)
-    original_image = models.ImageField(upload_to=getattr(settings, 'GALLERY_DIRECTORY', 'gallery'))
-    display_image = ImageSpec(getattr(settings, 'GALLERY_DISPLAY_IMAGE_PROCESSORS', DISPLAY_IMAGE_PROCESSORS), image_field='original_image', options={'quality': 90}, pre_cache=True)
-    thumbnail_image = ImageSpec(getattr(settings, 'GALLERY_THUMBNAIL_IMAGE_PROCESSORS', THUMBNAIL_IMAGE_PROCESSORS), image_field='original_image', format='JPEG', options={'quality': 75}, pre_cache=True)
-    cover_image = ImageSpec(getattr(settings, 'GALLERY_COVER_IMAGE_PROCESSORS', COVER_IMAGE_PROCESSORS), image_field='original_image', format='JPEG', options={'quality': 75}, autoconvert=False)
+    original_image = models.ImageField(upload_to=getattr(settings, 'GALLERY_STORAGE_PATH', 'gallery'))
+    display_image = ImageSpecField(processors=_get_image_processor, image_field='original_image', options={'quality': 90})
+    thumbnail_image = ImageSpecField(processors=_get_thumbnail_processor, image_field='original_image', format='JPEG', options={'quality': 75})
+    thumbnail_parameters = ThumbnailParametersField(editable=False, blank=True)
     text = models.TextField(_('text'), blank=True)
     is_public = models.BooleanField(_('is public'), default=True, help_text=_('Public images will be displayed in the default views.'))
     tags = TagField(help_text=_('Separate tags with spaces, put quotes around multiple-word tags.'), verbose_name=_('tags'))
