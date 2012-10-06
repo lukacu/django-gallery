@@ -4,11 +4,8 @@ from django.core.urlresolvers import reverse
 from django.contrib.syndication.views import Feed
 from django.contrib.sites.models import Site
 from django.utils.feedgenerator import Rss201rev2Feed
-from django.utils.http import urlquote
 from django.shortcuts import get_object_or_404
-from django.contrib.markup.templatetags.markup import markdown
 from django.utils.translation import ugettext_lazy as _
-from django.contrib.markup.templatetags.markup import markdown
 
 from tagging.models import Tag
 
@@ -70,7 +67,7 @@ class GalleryFeed(Feed):
         return _("Gallery feed")
 
     def link(self):
-        return reverse('gallery', kwargs={"path" : "" })
+        return reverse('gallery', kwargs={})
 
     def items(self):
         return Image.objects.filter(is_public=True).order_by("-date_added")[0:20]
@@ -101,7 +98,7 @@ class GalleryFeed(Feed):
         return item.title
 
     def item_description(self, item):
-        return markdown(item.text)
+        return item.text
 
     def item_categories(self, item):
       return [tag.name for tag in Tag.objects.get_for_object(item)]
@@ -123,17 +120,16 @@ class AlbumFeed(Feed):
         return album.text
 
     def link(self, album):
-        return reverse('gallery', kwargs={"path" : album.slug() })
+        return reverse('gallery-album', kwargs={"id" : album.id, "path" : "" })
 
     def items(self, album):
-        q = album.get_descendants(include_self=True).filter(is_public=True).values("id")
-        return Image.objects.filter(album__in=q, is_public=True).order_by("-date_added")[0:20]
+        return Image.objects.filter(album=album, is_public=True).order_by("-date_added")[0:20]
 
     def item_title(self, item):
       return item.title
 
     def item_description(self, item):
-      return markdown(item.text)
+      return item.text
 
     def item_pubdate(self, obj):
         return obj.date_added

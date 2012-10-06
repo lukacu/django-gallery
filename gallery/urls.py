@@ -1,6 +1,6 @@
 # -*- Mode: python; indent-tabs-mode: nil; c-basic-offset: 2; tab-width: 2 -*-
 
-from django.conf.urls.defaults import *
+from django.conf.urls import *
 from gallery.feeds import GalleryFeed, AlbumFeed
 
 urlpatterns = patterns('',
