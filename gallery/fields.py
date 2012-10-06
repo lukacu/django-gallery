@@ -23,7 +23,7 @@ class ThumbnailParametersField(models.CharField):
         return {'scale' : float(tokens[0]), 'x' : float(tokens[1]), 'y' : float(tokens[2])}
 
     def get_prep_value(self, value):
-        if value.empty():
+        if len(value) < 3:
             return ''
 
         return "%.3f;%.3f;%.3f" % (value.get("scale", 1), value.get("x", 0.5), value.get("y", 0.5))

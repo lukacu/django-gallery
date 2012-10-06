@@ -13,3 +13,4 @@ bin/*
 develop-eggs/*
 docs/_build
 src/*.egg-info
+.idea

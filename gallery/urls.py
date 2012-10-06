@@ -4,8 +4,11 @@ from django.conf.urls.defaults import *
 from gallery.feeds import GalleryFeed, AlbumFeed
 
 urlpatterns = patterns('',
-    url(r'^feed/gallery/$', GalleryFeed(), name="gallery-feed"),
+    url(r'^$', 'gallery.views.recent', name="gallery"),
+    url(r'^feed/$', GalleryFeed(), name="gallery-feed"),
     url(r'^feed/album/(?P<album_id>[0-9]+)/$', AlbumFeed(), name="gallery-album-feed"),
-    url(r'^(?P<path>[a-z\-_0-9\/]*)$', 'gallery.views.resolve', name="gallery"),
+    url(r'^image/(?P<id>[0-9]+)/(?P<path>[a-z\-_0-9\/]*)$', 'gallery.views.image', name="gallery-image"),
+    url(r'^album/(?P<id>[0-9]+)/(?P<path>[a-z\-_0-9\/]*)$', 'gallery.views.album', name="gallery-album"),
+    url(r'^tags/(?P<slug>[a-z\-_0-9\/]*)/$', 'gallery.views.tag', name="gallery-tag"),
 )
 
